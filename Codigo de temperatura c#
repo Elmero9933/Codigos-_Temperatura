@@ -1,0 +1,99 @@
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+using System.IO.Ports;
+using System.Diagnostics;
+
+namespace practica8
+{
+    public partial class Form1 : Form
+    {
+        delegate void setTextDelegate(string value);
+        public SerialPort ArduinoPort { get; }
+
+        public Form1()
+        {
+            InitializeComponent();
+            ArduinoPort = new System.IO.Ports.SerialPort();
+            ArduinoPort.PortName = "COM4";
+            ArduinoPort.BaudRate = 9600;
+            ArduinoPort.DataBits = 8;
+            ArduinoPort.ReadTimeout = 500;
+            ArduinoPort.WriteTimeout = 500;
+            ArduinoPort.DataReceived += new SerialDataReceivedEventHandler(DataRecievedHandler);
+
+            this.btnconectar.Click += btnconectar_Click_1;
+        }
+
+        private void DataRecievedHandler(object sender, SerialDataReceivedEventArgs e)
+        {
+            string datos = ArduinoPort.ReadLine();
+            Escribirtxt(datos);
+        }
+
+        private void Escribirtxt(string datos)
+        {
+            if (InvokeRequired)
+            {
+                try
+                {
+                    Invoke(new setTextDelegate(Escribirtxt), datos);
+                }
+                catch { }
+            }
+            else
+            {
+                lbltempe.Text = datos;
+            }
+        }
+
+        private void textBox1_TextChanged(object sender, EventArgs e)
+        {
+        }
+
+        private void btnconectar_Click_1(object sender, EventArgs e)
+        {
+            btnconectar.Enabled = true;
+            try
+            {
+                if (!ArduinoPort.IsOpen)
+                    ArduinoPort.Open();
+
+                if (int.TryParse(txtlimite.Text, out int limite))
+                {
+                    string limiteString = limite.ToString();
+                    ArduinoPort.WriteLine(limiteString);
+                }
+                else
+                {
+                    MessageBox.Show("El valor ingresado no es válido.");
+                }
+
+                label2.Text = "Conectado";
+                label2.ForeColor = System.Drawing.Color.Green;
+            }
+            catch
+            {
+                MessageBox.Show("Error al conectar con el puerto serie.");
+            }
+        }
+
+        private void Btndesconectar_Click(object sender, EventArgs e)
+        {
+            btnconectar.Enabled = true;
+            Btndesconectar.Enabled = false;
+            if (ArduinoPort.IsOpen)
+                ArduinoPort.Close();
+
+            label2.Text = "Desconectado";
+            label2.ForeColor = System.Drawing.Color.Red;
+            lbltempe.Text = "00.0";
+        }
+    }
+}
